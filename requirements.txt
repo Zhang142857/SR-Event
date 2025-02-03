@@ -1,0 +1,7 @@
+Flask==3.0.0
+Werkzeug==3.0.1
+python-dotenv==1.0.0
+requests==2.31.0
+zeroconf==0.131.0
+kivy==2.2.1
+kivymd==1.1.1

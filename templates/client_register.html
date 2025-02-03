@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ER-Event 客户端 - 注册</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">ER-Event 客户端</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">设备注册</h5>
+                <div id="serverStatus" class="alert alert-info">
+                    正在搜索服务器...
+                </div>
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label for="deviceName" class="form-label">设备名称</label>
+                        <input type="text" class="form-control" id="deviceName" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" disabled>注册设备</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const serverStatus = document.getElementById('serverStatus');
+        const submitButton = registerForm.querySelector('button[type="submit"]');
+        let serverFound = false;
+
+        // 定期检查服务器状态
+        function checkServer() {
+            fetch('/api/devices')
+                .then(response => response.json())
+                .then(data => {
+                    serverFound = true;
+                    serverStatus.textContent = '已连接到服务器';
+                    serverStatus.className = 'alert alert-success';
+                    submitButton.disabled = false;
+                })
+                .catch(error => {
+                    serverFound = false;
+                    serverStatus.textContent = '正在搜索服务器...';
+                    serverStatus.className = 'alert alert-info';
+                    submitButton.disabled = true;
+                });
+        }
+
+        setInterval(checkServer, 2000);
+        checkServer();
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!serverFound) {
+                alert('请等待服务器连接成功后再试');
+                return;
+            }
+
+            const deviceName = document.getElementById('deviceName').value;
+            if (!deviceName.trim()) {
+                alert('请输入设备名称');
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = '注册中...';
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        device_name: deviceName
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert(data.message || '注册失败');
+                    submitButton.disabled = false;
+                    submitButton.textContent = '注册设备';
+                }
+            } catch (error) {
+                alert('注册失败：' + error.message);
+                submitButton.disabled = false;
+                submitButton.textContent = '注册设备';
+            }
+        });
+    </script>
+</body>
+</html>
